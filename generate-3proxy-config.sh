@@ -3,11 +3,15 @@
 # Script to generate 3proxy config with auto-detected IPs
 CONFIG_FILE="/etc/3proxy/3proxy.cfg"
 TEMP_CONFIG="/tmp/3proxy_temp.cfg"
+PROXY_LIST_FILE="/proxy.txt"   # <— NEW
 
 # Get all non-loopback IPv4 addresses
 IPS=($(ip addr show | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | cut -d'/' -f1))
 
 echo "Detected IPs: ${IPS[@]}"
+
+# Start a fresh proxy list file
+: > "$PROXY_LIST_FILE"         # <— NEW (truncate/create)
 
 # Generate the base config
 cat > "$TEMP_CONFIG" << 'EOF'
@@ -55,11 +59,11 @@ auth strong cache
 socks -p$SOCKS_PORT -i$IP -e$IP
 
 EOF
-    
+    # Record both HTTP and SOCKS endpoints as ip:port lines  <— NEW
+    echo "${IP}:${HTTP_PORT}" >> "$PROXY_LIST_FILE"
+    echo "Generated proxy for $IP - HTTP:$HTTP_PORT, SOCKS:$SOCKS_PORT"
     HTTP_PORT=$((HTTP_PORT + 1))
     SOCKS_PORT=$((SOCKS_PORT + 1))
-    
-    echo "Generated proxy for $IP - HTTP:$((HTTP_PORT-1)), SOCKS:$((SOCKS_PORT-1))"
 done
 
 # Add admin interface
@@ -75,7 +79,11 @@ EOF
 # Move temp config to final location
 mv "$TEMP_CONFIG" "$CONFIG_FILE"
 
+# Make the proxy list readable
+chmod 644 "$PROXY_LIST_FILE"     # <— optional nicety
+
 echo "\nGenerated config file: $CONFIG_FILE"
+echo "Saved proxy list to: $PROXY_LIST_FILE"
 echo "\n\nAvailable proxy endpoints:"
 HTTP_PORT=9999
 SOCKS_PORT=8088
