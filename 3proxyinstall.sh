@@ -19,6 +19,6 @@ update-rc.d 3proxy defaults
 echo "running custom config changer\n"
 wget --no-check-certificate https://github.com/dzhisl/3proxy/raw/master/generate-3proxy-config.sh -O /etc/3proxy/generate-3proxy-config.sh
 chmod +x /etc/3proxy/generate-3proxy-config.sh
-./etc/3proxy/generate-3proxy-config.sh
+/etc/3proxy/generate-3proxy-config.sh
 
 /etc/init.d/3proxy start
